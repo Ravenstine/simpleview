@@ -6,19 +6,15 @@ require 'rack/stream'
 EM.run do
   EM::WebSocket.run host: "0.0.0.0", port: 9393 do |ws|
 
-    cmd = "ffmpeg -y -f x11grab -s 1600x900 -r 15 -i :0.0 -tune fastdecode -b:v 150k -threads 4 -f webm -"
-    @handler = EM.popen3(cmd, stdout: Proc.new { |data| 
-      puts(data)
-      ws.send(Base64.encode64(data))
-    }, stderr: Proc.new{|err|})
 
-    @handler.callback do
-      puts "hey"
-    end
 
-    @handler.errback do |err_code|
-      puts err_code
-    end
+    # @handler.callback do
+    #   puts "hey"
+    # end
+
+    # @handler.errback do |err_code|
+    #   puts err_code
+    # end
 
     ws.onopen do |handshake|
       puts "WebSocket connection open"
@@ -42,34 +38,38 @@ EM.run do
   end
 
 
-  # EM.run do
-  #   # use Rack::Stream
-  #   Rack::Server.start({
-  #     app:    Rack::Builder.app{map('/'){ run SimpleView.new }},
-  #     server: 'thin',
-  #     Host:   '0.0.0.0',
-  #     Port:   '8181'
-  #   })
-  # end
-
   EM.run do
 
     class App
       include Rack::Stream::DSL
 
       stream do
-        after_open do
+        stream = env['rack.stream']
+        stream.after_open do
           count = 0
-          @timer = EM.add_periodic_timer(1) do
-            chunk "chunky monkey\n"
+
+          cmd = "ffmpeg -y -f x11grab -s 640x480 -r 15 -i :0.0 -tune fastdecode -b:v 150k -threads 4 -f ogg -"
+          # cmd = "echo hey fool"
+          @handler = EM.popen3(cmd, stdout: Proc.new { |data| 
+            # chunk data
+            stream << data
+          }, stderr: Proc.new{|err| puts err})
+
+          @handler.callback do
+            # close
+          end
+
+          @handler.errback do |err_code|
+            puts err_code
           end
         end
 
         before_close do
-          @timer.cancel
+          # @timer.cancel
+          @handler.kill('TERM', true)
         end
 
-        [200, {'Content-Type' => 'text/plain'}, ['Hello']]
+        [200, {'Content-Type' => 'video/ogg', 'Cache-Control' => 'no-cache', 'Connection' => 'keep-alive', 'Content-Transfer-Encoding' => 'binary', 'Transfer-Encoding' => 'chunked', 'Content-Disposition' => 'inline; filename="stream.ogg"'}, []]
       end
     end
 
