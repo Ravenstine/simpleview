@@ -69,7 +69,7 @@ EM.run do
           @handler.kill('TERM', true)
         end
 
-        [200, {'Content-Type' => 'video/ogg', 'Cache-Control' => 'no-cache', 'Connection' => 'keep-alive', 'Content-Transfer-Encoding' => 'binary', 'Transfer-Encoding' => 'chunked', 'Content-Disposition' => 'inline; filename="stream.ogg"'}, []]
+        [200, {'Content-Type' => 'video/ogg', 'Cache-Control' => 'no-cache', 'Connection' => 'keep-alive', 'Content-Transfer-Encoding' => 'binary', 'Transfer-Encoding' => 'identity', 'Content-Disposition' => 'inline; filename="stream.ogg"'}, []]
       end
     end
 
