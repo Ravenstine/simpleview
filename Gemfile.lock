@@ -5,13 +5,23 @@ GEM
     em-popen3 (0.0.4)
       eventmachine (>= 1.0.0.beta.4)
       rake
+    em-synchrony (1.0.4)
+      eventmachine (>= 1.0.0.beta.1)
     em-websocket (0.5.1)
       eventmachine (>= 0.12.9)
       http_parser.rb (~> 0.6.0)
     eventmachine (1.0.5)
+    faye-websocket (0.9.2)
+      eventmachine (>= 0.12.0)
+      websocket-driver (>= 0.5.1)
     http_parser.rb (0.6.0)
     rack (1.6.0)
     rack-protection (1.5.3)
+      rack
+    rack-stream (0.0.5)
+      em-synchrony
+      eventmachine
+      faye-websocket
       rack
     rake (10.4.2)
     sinatra (1.4.5)
@@ -23,6 +33,9 @@ GEM
       eventmachine (~> 1.0)
       rack (~> 1.0)
     tilt (1.4.1)
+    websocket-driver (0.5.1)
+      websocket-extensions (>= 0.1.0)
+    websocket-extensions (0.1.1)
 
 PLATFORMS
   ruby
@@ -31,5 +44,7 @@ DEPENDENCIES
   em-popen3
   em-websocket
   eventmachine
+  rack
+  rack-stream
   sinatra
   thin

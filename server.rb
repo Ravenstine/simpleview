@@ -1,5 +1,7 @@
 require 'bundler'
 Bundler.require
+require 'rack'
+require 'rack/stream'
 
 EM.run do
   EM::WebSocket.run host: "0.0.0.0", port: 9393 do |ws|
@@ -35,17 +37,55 @@ EM.run do
       set :threaded, false
     end
     get '/' do
-      send_file
+      "root folder"
     end
   end
 
+
+  # EM.run do
+  #   # use Rack::Stream
+  #   Rack::Server.start({
+  #     app:    Rack::Builder.app{map('/'){ run SimpleView.new }},
+  #     server: 'thin',
+  #     Host:   '0.0.0.0',
+  #     Port:   '8181'
+  #   })
+  # end
+
   EM.run do
+
+    class App
+      include Rack::Stream::DSL
+
+      stream do
+        after_open do
+          count = 0
+          @timer = EM.add_periodic_timer(1) do
+            chunk "chunky monkey\n"
+          end
+        end
+
+        before_close do
+          @timer.cancel
+        end
+
+        [200, {'Content-Type' => 'text/plain'}, ['Hello']]
+      end
+    end
+
+    app = Rack::Builder.app do
+      use Rack::Stream
+      run App.new
+      map('/client'){ run SimpleView.new }
+    end
+
     Rack::Server.start({
-      app:    Rack::Builder.app{map('/'){ run SimpleView.new }},
+      app:    app,
       server: 'thin',
       Host:   '0.0.0.0',
-      Port:   '8181'
+      Port:   '5353'
     })
+
   end
 
 end
