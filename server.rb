@@ -37,7 +37,6 @@ EM.run do
 
     def process_http_request
       resp = EventMachine::DelegatedHttpResponse.new( self )
-      puts @http_path_info
       resp.status = 200
       resp.content = IO.binread("#{Dir.pwd}#{@http_path_info}") rescue "I dunno, dawg."
       resp.send_response
