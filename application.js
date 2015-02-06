@@ -1,10 +1,5 @@
-var stream = new WebSocket('ws://localhost:9393')
-var videoElement = document.querySelector("#desktop")
-var videoSource = document.querySelector("source")
-window.MediaSource = window.MediaSource || window.WebKitMediaSource;
-var mediaSource = new MediaSource()
-videoElement.src = window.URL.createObjectURL(mediaSource)
-// var videoElement.src = window.URL.createObjectURL(mediaSource)
+var stream = new WebSocket('ws://10.10.0.187:9393')
+var imageElement = document.querySelector("img")
 
 stream.onopen = function(){
   console.log('connection open')
@@ -14,32 +9,28 @@ stream.onclose = function(){
   console.log('connection closed')
 }
 
-var queue = []
+stream.onmessage = function(e){
+  imageElement.src = "data:image/jpg;base64," + e.data
+}
 
+document.body.addEventListener("mousemove", function(e){
+  var xOffset, yOffset, x, y, data, message
 
-mediaSource.addEventListener('sourceopen', function(e){
-  var sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp8,vorbis"')
+  x = e.clientX
+  y = e.clientY
+  data = {event: 'mousemove', data: [x,y]}
 
-  stream.onmessage = function(e){
-    var byteCharacters = atob(e.data)
+  message = JSON.stringify(data)
+  stream.send(message)
+})
 
-    var byteNumbers = new Array(byteCharacters.length)
-    for (var i = 0; i < byteCharacters.length; i++) {
-      byteNumbers[i] = byteCharacters.charCodeAt(i)
-    }
+document.body.addEventListener("click", function(e){
+  var xOffset, yOffset, x, y, data, message
 
-    var byteArray = new Uint8Array(byteNumbers)
+  x = e.clientX
+  y = e.clientY
+  data = {event: 'click', data: [x,y]}
 
-    // var blob = new Blob([byteArray], {type: "video/ogg"})
-
-    // var blobUrl = URL.createObjectURL(blob)
-
-    // console.log('received blob')
-    sourceBuffer.appendStream(new Uint8Array([1,2,3,4,5]))
-    // queue.push(byteArray)
-  }
-
-
-}, false)
-
-
+  message = JSON.stringify(data)
+  stream.send(message)
+})

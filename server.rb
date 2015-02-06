@@ -2,21 +2,9 @@ require 'bundler'
 Bundler.require
 
 EM.run do
+
+  mouse = RuMouse.new
   EM::WebSocket.run host: "0.0.0.0", port: 9393 do |ws|
-
-    cmd = "ffmpeg -y -f x11grab -s 1600x900 -r 15 -i :0.0 -tune fastdecode -b:v 150k -threads 4 -f webm -"
-    @handler = EM.popen3(cmd, stdout: Proc.new { |data| 
-      puts(data)
-      ws.send(Base64.encode64(data))
-    }, stderr: Proc.new{|err|})
-
-    @handler.callback do
-      puts "hey"
-    end
-
-    @handler.errback do |err_code|
-      puts err_code
-    end
 
     ws.onopen do |handshake|
       puts "WebSocket connection open"
@@ -24,31 +12,43 @@ EM.run do
 
     ws.onclose do
       puts "Connection closed"
-      # @handler.kill('TERM', true)
+    end
+
+    ws.onmessage do |message|
+      message = JSON.parse(message)
+      case message["event"]
+      when "mousemove"
+        mouse.move message["data"][0], message["data"][1]
+      when "click"
+        mouse.click message["data"][0], message["data"][1]
+      end
+    end
+
+    EM::PeriodicTimer.new 1 do
+      grab_desktop = Proc.new {`convert x:root -quality 20 jpg:- | base64 -`}
+      send_image = Proc.new {|result| ws.send(result)}
+      EM.defer grab_desktop, send_image
     end
 
   end
 
-  class SimpleView < Sinatra::Base
-    set :public_folder, './'
-    configure do
-      set :threaded, false
-    end
-    get '/' do
-      send_file
+  class Server  < EventMachine::Connection
+    include EventMachine::HttpServer
+
+    def process_http_request
+      resp = EventMachine::DelegatedHttpResponse.new( self )
+      puts @http_path_info
+      resp.status = 200
+      resp.content = IO.binread("#{Dir.pwd}#{@http_path_info}") rescue "I dunno, dawg."
+      resp.send_response
     end
   end
 
-  EM.run do
-    Rack::Server.start({
-      app:    Rack::Builder.app{map('/'){ run SimpleView.new }},
-      server: 'thin',
-      Host:   '0.0.0.0',
-      Port:   '8181'
-    })
-  end
+  EventMachine::start_server("0.0.0.0", 5353, Server)
 
 end
+
+
 
 
 
