@@ -1,8 +1,7 @@
 source 'https://rubygems.org'
 
 gem 'eventmachine'
+gem 'eventmachine_httpserver', :require => 'evma_httpserver'
 gem 'em-websocket'
-gem 'rack'
-gem 'thin'
 gem 'json'
 gem 'rumouse'
