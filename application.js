@@ -12,6 +12,7 @@ stream.onclose = function(){
 
 stream.onmessage = function(e){
   var img = document.querySelector('img')
+  console.log ('received shit')
   img.src = "data:image/jpg;base64," + e.data
 }
 
