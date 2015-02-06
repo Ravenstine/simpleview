@@ -5,33 +5,6 @@ require 'base64'
 
   EM.run do
 
-    class Streamer < EM::Connection
-
-      def initialize socket
-        @socket = socket
-        @data = ""
-      end
-
-      def receive_data data
-        puts "whutup dog"
-        @data += data
-      end
-
-      def unbind
-        # send_data = Proc.new {@socket.send Base64.encode64(@data)}
-
-        send_data = Proc.new {@socket.send @data}
-        clear_data = Proc.new do 
-          @data.clear
-          # cmd = "convert x:root -quality 70 jpg:-"
-          cmd = "convert x:root -quality 20 jpg:- | base64 -"
-          EM.popen(cmd, self.class, @socket)    
-        end
-        EM.defer send_data, clear_data    
-      end
-
-    end
-
     class App
       def call env
         [200, {}, 'Hello World']
@@ -43,7 +16,6 @@ require 'base64'
 
       ws.onopen do |handshake|
         puts "WebSocket connection open"
-        # ws.send `convert x:root -quality 20 jpg:- | base64 -`
       end
 
       ws.onclose do
@@ -60,27 +32,11 @@ require 'base64'
         end
       end
 
-      # sender = Proc.new do
-      #   EM.defer Proc.new{ ws.send(`convert x:root -quality 20 jpg:- | base64 -`)}, sender
-      # end
-
-        sender = Proc.new do
-          ws.send(`convert x:root -quality 20 jpg:- | base64 -`)
-        end
-
       EM::PeriodicTimer.new(1) do
-        # EM.defer sender
-        Thread.new do
-          sender.call
-        end
+        grab_desktop = Proc.new {`convert x:root -quality 20 jpg:- | base64 -`}
+        send_image = Proc.new {|result| ws.send(result)}
+        EM.defer grab_desktop, send_image
       end
-
-      # sender.call
-
-
-      # cmd = "convert x:root -quality 20 jpg:- | base64 -"
-      # EM.popen(cmd, Streamer, ws)
-
 
     end
 
