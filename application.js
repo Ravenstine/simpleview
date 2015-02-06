@@ -1,5 +1,5 @@
 var stream = new WebSocket('ws://104.8.69.205:9393')
-var videoElement = document.querySelector("video")
+var imageElement = document.querySelector("img")
 
 stream.onopen = function(){
   console.log('connection open')
@@ -11,14 +11,15 @@ stream.onclose = function(){
 
 
 stream.onmessage = function(e){
-
+  var img = document.querySelector('img')
+  img.src = "data:image/jpg;base64," + e.data
 }
 
-videoElement.addEventListener("mousemove", function(e){
+imageElement.addEventListener("mousemove", function(e){
   var xOffset, yOffset, x, y, data, message
 
-  xOffset = videoElement.offsetLeft
-  yOffset = videoElement.offsetTop
+  xOffset = imageElement.offsetLeft
+  yOffset = imageElement.offsetTop
 
   x = e.clientX + xOffset
   y = e.clientY + yOffset
@@ -28,11 +29,11 @@ videoElement.addEventListener("mousemove", function(e){
   stream.send(message)
 })
 
-document.body.addEventListener("click", function(e){
+imageElement.addEventListener("click", function(e){
   var xOffset, yOffset, x, y, data, message
 
-  xOffset = videoElement.offsetLeft
-  yOffset = videoElement.offsetTop
+  xOffset = imageElement.offsetLeft
+  yOffset = imageElement.offsetTop
 
   x = e.clientX + xOffset
   y = e.clientY + yOffset

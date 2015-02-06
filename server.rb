@@ -1,78 +1,64 @@
 require 'bundler'
 Bundler.require
 require 'rack'
-require 'rack/stream'
+require 'base64'
 
   EM.run do
 
     class Streamer < EM::Connection
 
-      def initialize stream
-        @stream = stream
+      def initialize socket
+        @socket = socket
+        @data = []
       end
 
       def receive_data data
-        @stream << data
+        @data << data
+      end
+
+      def unbind
+        send_data = Proc.new {@socket.send Base64.encode64(@data.join(""))}
+        clear_data = Proc.new {@data.clear}
+        EM.defer send_data, clear_data
       end
 
     end
-
-    class Video
-      def self.handler stream=nil
-        if @handler
-          stop
-          @handler = nil
-        end
-        cmd = "ffmpeg -y -f x11grab -s 1600x900 -r 5 -i :0.0 -tune fastdecode -b:v 256k -threads 4 -f ogg -"    
-        @handler = EM.popen(cmd, Streamer, stream)
-      end
-
-      def self.stop
-        @handler.close_connection if @handler
-      end
-    end
-
 
     class App
       include Rack::Stream::DSL
 
-        mouse = RuMouse.new
-        EM::WebSocket.run host: "0.0.0.0", port: 9393 do |ws|
+      mouse = RuMouse.new
+      EM::WebSocket.run host: "0.0.0.0", port: 9393 do |ws|
 
-          ws.onopen do |handshake|
-            puts "WebSocket connection open"
-            
-          end
-
-          ws.onclose do
-            puts "Connection closed"
-            Video.stop
-          end
-
-          ws.onmessage do |message|
-            message = JSON.parse(message)
-            case message["event"]
-            when "mousemove"
-              mouse.move message["data"][0], message["data"][1]
-            when "click"
-              mouse.click message["data"][0], message["data"][1]
-            end
-          end
-
+        ws.onopen do |handshake|
+          puts "WebSocket connection open"
         end
 
-        stream do
-          after_open do
-            Video.handler env['rack.stream']
-          end
-          [200, {'Content-Type' => "video/ogg", 'Cache-Control' => 'no-cache', 'Content-Transfer-Encoding' => 'binary', 'Content-Disposition' => "inline; filename='stream.ogg'"}, []]
+        ws.onclose do
+          puts "Connection closed"
         end
+
+        ws.onmessage do |message|
+          message = JSON.parse(message)
+          case message["event"]
+          when "mousemove"
+            mouse.move message["data"][0], message["data"][1]
+          when "click"
+            mouse.click message["data"][0], message["data"][1]
+          end
+        end
+
+        EM::PeriodicTimer.new(0.5) do
+          cmd = "convert x:root -quality 50 jpg:-"
+          EM.popen(cmd, Streamer, ws)
+        end
+
+      end
 
     end
 
     app = Rack::Builder.app do
       use Rack::Static, :urls => ["/client.html", "/style.css", "/application.js"], :root => "./"
-      use Rack::Stream
       run App.new
     end
 
