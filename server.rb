@@ -3,110 +3,77 @@ Bundler.require
 require 'rack'
 require 'rack/stream'
 
-EM.run do
-  mouse = RuMouse.new
-  EM::WebSocket.run host: "0.0.0.0", port: 9393 do |ws|
-
-    ws.onopen do |handshake|
-      puts "WebSocket connection open"
-    end
-
-    ws.onclose do
-      puts "Connection closed"
-      @handler.kill('TERM', true) if @handler
-    end
-
-    ws.onmessage do |message|
-      message = JSON.parse(message)
-
-      case message["event"]
-      when "mousemove"
-        mouse.move message["data"][0], message["data"][1]
-      when "click"
-        mouse.click message["data"][0], message["data"][1]
-      end
-    end
-
-  end
-
-  # class SimpleView < Sinatra::Base
-  #   set :public_folder, './'
-  #   configure do
-  #     set :threaded, false
-  #   end
-  #   get '/' do
-  #     "root folder"
-  #   end
-  # end
-
-
   EM.run do
 
     class Streamer < EM::Connection
 
-      def self.header
-        @header
-      end
-
-      def self.add_header head
-        @header = head
-      end
-
-      def self.add_callback &callback
-        callbacks << callback
-      end
-
-      def self.callbacks
-        @callbacks ||= []
+      def initialize stream
+        @stream = stream
       end
 
       def receive_data data
-        EM::Iterator.new(self.class.callbacks).each do |callback|
-          self.class.add_header data if self.class.header.nil?
-          callback.call data
-        end
+        @stream << data
       end
 
     end
-    # cmd = "ffmpeg -y -f x11grab -s 1600x900 -r 5 -i :0.0 -tune fastdecode -b:v 256k -threads 4 -f ogg -"
-    # cmd = "ffmpeg -y -f x11grab -s 1600x900 -r 5 -i :0.0 -movflags faststart -b:v 256k -threads 4 -f mp4 -"
-    cmd = "ffmpeg -y -f x11grab -s 1600x900 -r 5 -re -i :0.0 -g 52 -c:v libx264 -crf 22 -c:a libfaac -movflags frag_keyframe+empty_moov -f mp4 -"
-    # cmd = "ffmpeg -y -f x11grab -s 1600x900 -r 5 -i :0.0 -c:v libx264 -f segment -segment_time 4 -segment_format mp4 -"
+
+    class Video
+      def self.handler stream=nil
+        if @handler
+          stop
+          @handler = nil
+        end
+        cmd = "ffmpeg -y -f x11grab -s 1600x900 -r 5 -i :0.0 -tune fastdecode -b:v 256k -threads 4 -f ogg -"    
+        @handler = EM.popen(cmd, Streamer, stream)
+      end
+
+      def self.stop
+        @handler.close_connection if @handler
+      end
+    end
 
 
-    EM.popen(cmd, Streamer)
-  end
-
-  EM.run do
     class App
       include Rack::Stream::DSL
 
-      @@streams = []
+        mouse = RuMouse.new
+        EM::WebSocket.run host: "0.0.0.0", port: 9393 do |ws|
 
-      stream do
-        after_open do
+          ws.onopen do |handshake|
+            puts "WebSocket connection open"
+            
+          end
 
-          env['rack.stream'] << Streamer.header if Streamer.header
+          ws.onclose do
+            puts "Connection closed"
+            Video.stop
+          end
 
-          Streamer.add_callback do |data|
-            env['rack.stream'] << data
+          ws.onmessage do |message|
+            message = JSON.parse(message)
+            case message["event"]
+            when "mousemove"
+              mouse.move message["data"][0], message["data"][1]
+            when "click"
+              mouse.click message["data"][0], message["data"][1]
+            end
           end
 
         end
 
-        before_close do
-          puts 'the stream is closed'
-          # @handler.kill('TERM', true)
+        stream do
+          after_open do
+            Video.handler env['rack.stream']
+          end
+          [200, {'Content-Type' => "video/ogg", 'Cache-Control' => 'no-cache', 'Content-Transfer-Encoding' => 'binary', 'Content-Disposition' => "inline; filename='stream.ogg'"}, []]
         end
 
-        [200, {'Content-Type' => 'video/mp4', 'Cache-Control' => 'no-cache', 'Content-Transfer-Encoding' => 'binary', 'Transfer-Encoding' => 'identity', 'Content-Disposition' => 'inline; filename="stream.mp4"'}, []]
-      end
     end
 
     app = Rack::Builder.app do
+      use Rack::Static, :urls => ["/client.html", "/style.css", "/application.js"], :root => "./"
       use Rack::Stream
       run App.new
-      # map('/client'){ run SimpleView.new }
     end
 
     Rack::Server.start({
@@ -118,7 +85,7 @@ EM.run do
 
   end
 
-end
+
 
 
 

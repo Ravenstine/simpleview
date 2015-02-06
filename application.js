@@ -1,4 +1,4 @@
-var stream = new WebSocket('ws://localhost:9393')
+var stream = new WebSocket('ws://104.8.69.205:9393')
 var videoElement = document.querySelector("video")
 
 stream.onopen = function(){
