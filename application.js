@@ -1,4 +1,4 @@
-var stream = new WebSocket('ws://104.8.69.205:9393')
+var stream = new WebSocket('ws://10.10.0.187:9393')
 var imageElement = document.querySelector("img")
 
 stream.onopen = function(){
@@ -15,28 +15,51 @@ stream.onmessage = function(e){
   img.src = "data:image/jpg;base64," + e.data
 }
 
-imageElement.addEventListener("mousemove", function(e){
+// imageElement.addEventListener("mousemove", function(e){
+//   var xOffset, yOffset, x, y, data, message
+
+//   xOffset = imageElement.offsetLeft
+//   yOffset = imageElement.offsetTop
+
+//   x = e.clientX + xOffset
+//   y = e.clientY + yOffset
+//   data = {event: 'mousemove', data: [x,y]}
+
+//   message = JSON.stringify(data)
+//   stream.send(message)
+// })
+
+// imageElement.addEventListener("click", function(e){
+//   var xOffset, yOffset, x, y, data, message
+
+//   xOffset = imageElement.offsetLeft
+//   yOffset = imageElement.offsetTop
+
+//   x = e.clientX + xOffset
+//   y = e.clientY + yOffset
+//   data = {event: 'click', data: [x,y]}
+
+//   message = JSON.stringify(data)
+//   stream.send(message)
+// })
+
+
+document.body.addEventListener("mousemove", function(e){
   var xOffset, yOffset, x, y, data, message
 
-  xOffset = imageElement.offsetLeft
-  yOffset = imageElement.offsetTop
-
-  x = e.clientX + xOffset
-  y = e.clientY + yOffset
+  x = e.clientX
+  y = e.clientY
   data = {event: 'mousemove', data: [x,y]}
 
   message = JSON.stringify(data)
   stream.send(message)
 })
 
-imageElement.addEventListener("click", function(e){
+document.body.addEventListener("click", function(e){
   var xOffset, yOffset, x, y, data, message
 
-  xOffset = imageElement.offsetLeft
-  yOffset = imageElement.offsetTop
-
-  x = e.clientX + xOffset
-  y = e.clientY + yOffset
+  x = e.clientX
+  y = e.clientY
   data = {event: 'click', data: [x,y]}
 
   message = JSON.stringify(data)

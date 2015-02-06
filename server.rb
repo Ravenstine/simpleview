@@ -25,34 +25,35 @@ require 'base64'
     end
 
     class App
-      include Rack::Stream::DSL
+      def call env
+        [200, {}, 'Hello World']
+      end
+    end
 
-      mouse = RuMouse.new
-      EM::WebSocket.run host: "0.0.0.0", port: 9393 do |ws|
+    mouse = RuMouse.new
+    EM::WebSocket.run host: "0.0.0.0", port: 9393 do |ws|
 
-        ws.onopen do |handshake|
-          puts "WebSocket connection open"
+      ws.onopen do |handshake|
+        puts "WebSocket connection open"
+      end
+
+      ws.onclose do
+        puts "Connection closed"
+      end
+
+      ws.onmessage do |message|
+        message = JSON.parse(message)
+        case message["event"]
+        when "mousemove"
+          mouse.move message["data"][0], message["data"][1]
+        when "click"
+          mouse.click message["data"][0], message["data"][1]
         end
+      end
 
-        ws.onclose do
-          puts "Connection closed"
-        end
-
-        ws.onmessage do |message|
-          message = JSON.parse(message)
-          case message["event"]
-          when "mousemove"
-            mouse.move message["data"][0], message["data"][1]
-          when "click"
-            mouse.click message["data"][0], message["data"][1]
-          end
-        end
-
-        EM::PeriodicTimer.new(0.5) do
-          cmd = "convert x:root -quality 50 jpg:-"
-          EM.popen(cmd, Streamer, ws)
-        end
-
+      EM::PeriodicTimer.new(0.5) do
+        cmd = "convert x:root -quality 20 jpg:-"
+        EM.popen(cmd, Streamer, ws)
       end
 
     end
