@@ -25,7 +25,7 @@ EM.run do
     end
 
     EM::PeriodicTimer.new 1 do
-      grab_desktop = Proc.new {`convert x:root -quality 20 jpg:- | base64 -`}
+      grab_desktop = Proc.new {`import -window root -quality 20 jpg:- | base64 -`}
       send_image = Proc.new {|result| ws.send(result)}
       EM.defer grab_desktop, send_image
     end
