@@ -25,7 +25,9 @@ EM.run do
     end
 
     EM::PeriodicTimer.new 1 do
-      grab_desktop = Proc.new {`import -window root -quality 20 jpg:- | base64 -`}
+      screenshot_command = "xwd -root | convert xwd:- -quality 20 jpg:- | base64"
+      # screenshot_command = "import -window root -quality 20 jpg:- | base64 -"
+      grab_desktop = Proc.new {POSIX::Spawn.send(:`, screenshot_command)}
       send_image = Proc.new do |result|
         unless result == @previous_frame
           ws.send(result)
