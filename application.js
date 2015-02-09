@@ -16,8 +16,8 @@ stream.onmessage = function(e){
 document.body.addEventListener("mousemove", function(e){
   var xOffset, yOffset, x, y, data, message
 
-  x = e.clientX
-  y = e.clientY
+  x = e.pageX
+  y = e.pageY
   data = {event: 'mousemove', data: [x,y]}
 
   message = JSON.stringify(data)
@@ -27,8 +27,8 @@ document.body.addEventListener("mousemove", function(e){
 document.body.addEventListener("click", function(e){
   var xOffset, yOffset, x, y, data, message
 
-  x = e.clientX
-  y = e.clientY
+  x = e.pageX
+  y = e.pageY
   data = {event: 'click', data: [x,y]}
 
   message = JSON.stringify(data)

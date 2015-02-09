@@ -26,7 +26,12 @@ EM.run do
 
     EM::PeriodicTimer.new 1 do
       grab_desktop = Proc.new {`import -window root -quality 20 jpg:- | base64 -`}
-      send_image = Proc.new {|result| ws.send(result)}
+      send_image = Proc.new do |result|
+        unless result == @previous_frame
+          ws.send(result)
+        end
+        @previous_frame = result
+      end
       EM.defer grab_desktop, send_image
     end
 
