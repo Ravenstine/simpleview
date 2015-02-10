@@ -1,4 +1,4 @@
-var stream = new WebSocket('ws://' + window.location.hostname + ':9393')
+var stream = new WebSocket('ws://' + window.location.hostname + ':9393?server=firstpost')
 var imageElement = document.querySelector("img")
 
 stream.onopen = function(){

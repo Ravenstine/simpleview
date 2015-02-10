@@ -8,6 +8,7 @@ EM.run do
 
     ws.onopen do |handshake|
       puts "WebSocket connection open"
+      handshake.send "whutup fool"
     end
 
     ws.onclose do
