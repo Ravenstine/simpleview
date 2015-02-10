@@ -3,37 +3,49 @@ Bundler.require
 
 EM.run do
 
-  mouse = RuMouse.new
-  EM::WebSocket.run host: "0.0.0.0", port: 9393 do |ws|
+  @servers = {}
 
-    servers = {}
-    @server = false
+  EM::WebSocket.run host: "0.0.0.0", port: 9393 do |ws|
 
     ws.onopen do |handshake|
 
-      if server_name = handshake.query["server"]
-        @channel = servers[server_name] = EM::Channel.new
-        @server = true
+      server_name = handshake.query["channel"]
+
+      @servers[server_name] ||= {}
+
+      if @is_server = handshake.query.has_key?("server")
+        puts "user is a server"
+        channel = @servers[server_name]["server"] ||= EM::Channel.new
       else
-        server_name = handshake.query["remote"]
-        @channel = servers[server_name]
+        puts "user is a client"
+        clients = @servers[server_name]["clients"] ||= []
+        channel = EM::Channel.new
+        clients << channel
       end
 
-      sid = @channel.subscribe do |message| 
+      sid = channel.subscribe do |message|
         ws.send message
       end
 
-      puts "#{sid} connected!"
-
-      ws.onmessage do |message|
-        @channel.push message
+      ws.onmessage do |msg|
+        if @is_server
+          clients = @servers[server_name]["clients"]
+          EM::Iterator.new(clients).each do |client|
+            client.push msg
+          end
+        else
+          @servers[server_name]["server"].push msg
+        end
       end
 
       ws.onclose do
-        puts "disconnected!"
-        @channel.unsubscribe(sid)
+        channel.unsubscribe(sid)
+        if @is_server
+          @servers[server_name].delete
+        else
+          @servers[server_name]["clients"].delete(channel)
+        end
       end
-
     end
 
   end

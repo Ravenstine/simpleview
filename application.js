@@ -1,4 +1,4 @@
-var stream = new WebSocket('ws://' + window.location.hostname + ':9393?server=firstpost')
+var stream = new WebSocket('ws://' + window.location.hostname + ':9393' + "?channel=gimpler")
 var imageElement = document.querySelector("img")
 
 stream.onopen = function(){
@@ -11,6 +11,7 @@ stream.onclose = function(){
 
 stream.onmessage = function(e){
   imageElement.src = "data:image/jpg;base64," + e.data
+  // console.log(e.data)
 }
 
 document.body.addEventListener("mousemove", function(e){
