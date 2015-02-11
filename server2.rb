@@ -9,7 +9,6 @@ EM.run do
 
     ws.onopen do |handshake|
       puts "Connection to node acquired."
-      # handshake.send "whutup fool"
     end
 
     ws.onclose do
@@ -21,9 +20,17 @@ EM.run do
       case message["event"]
       when "mousemove"
         mouse.move message["data"][0], message["data"][1]
-      when "click"
-        mouse.click message["data"][0], message["data"][1]
-      end
+      when "mousedown"
+        mouse.press message["data"][0], message["data"][1]
+      when "mouseup"
+        mouse.release message["data"][0], message["data"][1]
+      when "keydown"
+        puts 'keydown'
+        # POSIX::Spawn.send(:`, "xdotool keydown #{message['data']}")
+      when "keyup"
+        puts 'keyup'
+       # POSIX::Spawn.send(:`, "xdotool keyup #{message['data']}")
+     end
     end
 
     EM::PeriodicTimer.new 1 do

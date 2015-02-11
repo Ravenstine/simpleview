@@ -1,37 +1,55 @@
-var stream = new WebSocket('ws://' + window.location.hostname + ':9393' + "?channel=gimpler")
-var imageElement = document.querySelector("img")
+(function(){
 
-stream.onopen = function(){
-  console.log('connection open')
-}
+  var stream = new WebSocket('ws://' + window.location.hostname + ':9393' + "?channel=gimpler")
+  var imageElement = document.querySelector("img")
 
-stream.onclose = function(){
-  console.log('connection closed')
-}
+  stream.onopen = function(){
+    console.log('connection open')
+  }
 
-stream.onmessage = function(e){
-  imageElement.src = "data:image/jpg;base64," + e.data
-  // console.log(e.data)
-}
+  stream.onclose = function(){
+    console.log('connection closed')
+  }
 
-document.body.addEventListener("mousemove", function(e){
-  var xOffset, yOffset, x, y, data, message
+  stream.onmessage = function(e){
+    console.log('received image')
+    imageElement.src = "data:image/jpg;base64," + e.data
+  }
 
-  x = e.pageX
-  y = e.pageY
-  data = {event: 'mousemove', data: [x,y]}
+  function sendEvent(event, data){
+    var data, message
+    data = {event: event, data: data}
+    message = JSON.stringify(data)
+    stream.send(message)
+  }
 
-  message = JSON.stringify(data)
-  stream.send(message)
-})
+  function addEventListeners(events, callback){
+    var i = 0
+    while(i < events.length){
+      (function(){
+        var event = events[i]
+        document.body.addEventListener(event, function(e){
+          callback(e, event)
+        })
+      })()
+      i++
+    } 
+  }
 
-document.body.addEventListener("click", function(e){
-  var xOffset, yOffset, x, y, data, message
+  function addPushers(events, callback){
+    addEventListeners(events, function(e, event){
+      sendEvent(event, callback(e, event))
+    })
+  }
 
-  x = e.pageX
-  y = e.pageY
-  data = {event: 'click', data: [x,y]}
+  addPushers(["mouseup", "mousedown", "mousemove"], function(e, event){
+    return [e.pageX,e.pageY]
+  })
 
-  message = JSON.stringify(data)
-  stream.send(message)
-})
+  addPushers(["keydown", "keyup"], function(e, event){
+    var unicode
+    unicode = "0x" + e.keyIdentifier.split("+")[1];
+    return unicode
+  })
+
+})()
