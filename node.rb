@@ -1,5 +1,5 @@
 require 'bundler'
-Bundler.require
+Bundler.require :node
 
 class SocketConnection
   def initialize socket
@@ -29,11 +29,10 @@ class Client < SocketConnection
 end
 
 class Server < SocketConnection
-  attr_accessor :clients, :node, :channel
-  def initialize socket=nil, node, channel
+  attr_accessor :clients
+  def initialize socket=nil
     self.socket = socket
     @clients = []
-    @node = node
   end
 
   def socket= socket=nil
@@ -41,9 +40,7 @@ class Server < SocketConnection
     if @socket
       puts "Server Connected"
       @socket.onmessage do |message|
-        puts "Message received from server"
         @clients.each do |client|
-          puts "Message sent to client"
           client.push message
         end
       end
@@ -51,9 +48,12 @@ class Server < SocketConnection
     @socket  
   end
 
-  def disconnect
-    super
-    @node.servers.delete[@channel]
+  def connected?
+    if @socket && (state = @socket.state)
+      state == :connected
+    else
+      false
+    end
   end
 end
 
@@ -77,7 +77,7 @@ EM.run do
       server = @node.servers[channel_name] ||= Server.new(nil, @node, channel_name)
 
       if is_server
-        server.socket = ws
+        server.socket = ws unless server.connected?
       else
         client = Client.new ws, server
         server.clients << client

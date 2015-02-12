@@ -1,11 +1,15 @@
 source 'https://rubygems.org'
 
 gem 'eventmachine'
-gem 'eventmachine_httpserver', :require => 'evma_httpserver'
-gem 'em-websocket'
 gem 'json'
-gem 'rumouse'
-gem 'posix-spawn'
-gem 'pry'
-gem 'pry-byebug'
-gem 'websocket-eventmachine-client'
+
+group :node do
+  gem 'em-websocket'
+  gem 'eventmachine_httpserver', require: 'evma_httpserver'
+end
+
+group :server do
+  gem 'websocket-eventmachine-client'
+  gem 'rumouse'
+  gem 'posix-spawn'
+end
