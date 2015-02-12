@@ -5,7 +5,7 @@ EM.run do
 
   mouse = RuMouse.new
 
-  ws = WebSocket::EventMachine::Client.connect(uri: 'ws://127.0.0.1:9393?server&channel=gimpler')
+  ws = WebSocket::EventMachine::Client.connect(uri: 'ws://54.200.180.86:9393?server&channel=gimpler')
 
     ws.onopen do |handshake|
       puts "Connection to node acquired."
@@ -26,10 +26,10 @@ EM.run do
         mouse.release message["data"][0], message["data"][1]
       when "keydown"
         puts 'keydown'
-        # POSIX::Spawn.send(:`, "xdotool keydown #{message['data']}")
+        POSIX::Spawn.send(:`, "xdotool keydown #{message['data']}")
       when "keyup"
         puts 'keyup'
-       # POSIX::Spawn.send(:`, "xdotool keyup #{message['data']}")
+       POSIX::Spawn.send(:`, "xdotool keyup #{message['data']}")
      end
     end
 

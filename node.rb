@@ -8,6 +8,9 @@ class SocketConnection
   def push message
     @socket.send message
   end
+  def disconnect
+    @socket.close_connection
+  end
 end
 
 class Client < SocketConnection
@@ -19,22 +22,38 @@ class Client < SocketConnection
       @server.push message
     end
   end
+  def disconnect
+    super
+    @server.clients.delete self
+  end
 end
 
 class Server < SocketConnection
-  attr_accessor :clients
-  def initialize socket
-    super socket
+  attr_accessor :clients, :node, :channel
+  def initialize socket=nil, node, channel
+    self.socket = socket
     @clients = []
-    puts "Server Connected"
-    @socket.onmessage do |message|
-      puts "Message received from server"
-      @clients.each do |client|
-      # EM::Iterator.new(@clients) do |client|
-        puts "Message sent to client"
-        client.push message
+    @node = node
+  end
+
+  def socket= socket=nil
+    @socket = socket
+    if @socket
+      puts "Server Connected"
+      @socket.onmessage do |message|
+        puts "Message received from server"
+        @clients.each do |client|
+          puts "Message sent to client"
+          client.push message
+        end
       end
-    end
+    end  
+    @socket  
+  end
+
+  def disconnect
+    super
+    @node.servers.delete[@channel]
   end
 end
 
@@ -53,54 +72,21 @@ EM.run do
 
     ws.onopen do |handshake|
 
-      @is_server = handshake.query.has_key?("server")
-      server_name = handshake.query["channel"]
-      @node.servers[server_name] ||= Server.new(ws) if @is_server
-      server = @node.servers[server_name]
+      is_server = handshake.query.has_key?("server")
+      channel_name = handshake.query["channel"]
+      server = @node.servers[channel_name] ||= Server.new(nil, @node, channel_name)
 
-      if @is_server
-        channel = server
+      if is_server
+        server.socket = ws
       else
-        channel = Client.new ws, server
-        server.clients << channel
+        client = Client.new ws, server
+        server.clients << client
       end
 
+      ws.onclose do
+        (client || server).disconnect
+      end
 
-      # server = @servers[server_name]["server"] ||= EM::Channel.new
-      # clients = @servers[server_name]["clients"] ||= []
-
-      # if @is_server = handshake.query.has_key?("server")
-      #   puts "user is a server"
-      #   channel = server
-      # else
-      #   puts "user is a client"
-      #   client = EM::Channel.new
-      #   channel = client
-      #   clients << client
-      # end
-
-      # sid = channel.subscribe do |message|
-      #   ws.send message
-      # end
-
-      # ws.onmessage do |msg|
-      #   if @is_server
-      #     EM::Iterator.new(clients).each do |client|
-      #       client.push msg
-      #     end
-      #   else
-      #     server.push msg
-      #   end
-      # end
-
-      # ws.onclose do
-      #   channel.unsubscribe(sid)
-      #   if @is_server
-      #     @servers[server_name].delete
-      #   else
-      #     clients.delete(channel)
-      #   end
-      # end
     end
 
   end
