@@ -1,9 +1,11 @@
 require 'bundler'
 Bundler.require :server
+require './linux/keyboard'
+require './linux/mouse'
+require './linux/screen'
 
 class Server
   def initialize
-    @mouse = RuMouse.new
     establish_connection
   end
 
@@ -20,21 +22,21 @@ class Server
       else
         puts "Node connection closed."
       end
-      @screencaster.cancel if @screencaster
+      @screen.stop if @screen
     end
     @socket.onmessage do |message|
       message = JSON.parse(message)
       case message["event"]
       when "mousemove"
-        @mouse.move message["data"][0], message["data"][1]
+        Mouse.move message["data"][0], message["data"][1]
       when "mousedown"
-        @mouse.press message["data"][0], message["data"][1]
+        Mouse.left_press message["data"][0], message["data"][1]
       when "mouseup"
-        @mouse.release message["data"][0], message["data"][1]
+        Mouse.left_release message["data"][0], message["data"][1]
       when "keydown"
-        POSIX::Spawn.send(:`, "xdotool keydown #{message['data']}")
+        Keyboard.keydown message['data']
       when "keyup"
-        POSIX::Spawn.send(:`, "xdotool keyup #{message['data']}")
+        Keyboard.keyup message['data']
       end
     end
   rescue ConnectionError
@@ -45,18 +47,7 @@ class Server
   end
 
   def cast_screen
-    @screencaster = EM::PeriodicTimer.new 1 do
-      screenshot_command = "xwd -root | convert xwd:- -quality 20 jpg:- | base64"
-      # screenshot_command = "import -window root -quality 20 jpg:- | base64 -"
-      grab_desktop = Proc.new {POSIX::Spawn.send(:`, screenshot_command)}
-      send_image = Proc.new do |result|
-        unless result == @previous_frame
-          @socket.send(result)
-        end
-        @previous_frame = result
-      end
-      EM.defer grab_desktop, send_image
-    end
+    @screen = Screen.new @socket
   end
 
 end
