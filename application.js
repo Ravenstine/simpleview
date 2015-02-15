@@ -43,17 +43,21 @@
   }
 
   addPushers(["mouseup", "mousedown"], function(e, event){
-    e.preventDefault
-    return {button: e.which, coords: [e.pageX,e.pageY]}
+    e.preventDefault()
+    // return {button: e.which, coords: [e.pageX,e.pageY]}
+    return {constant: "Mouse", method: event, arguments: [e.pageX, e.pageY, e.which]}
   })
 
   addPushers(["mousemove"], function(e, event){
-    return [e.pageX,e.pageY]
+    // return [e.pageX,e.pageY]
+    e.preventDefault()
+    return {constant: "Mouse", method: event, arguments: [e.pageX, e.pageY]}
   })
 
 
   addPushers(["keydown", "keyup"], function(e, event){
-    return e.which
+    // return e.which
+    return {constant: "Keyboard", method: event, arguments: [e.which]}
   })
 
   addEventListener("contextMenu", function(){

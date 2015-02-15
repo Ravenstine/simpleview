@@ -109,10 +109,6 @@ module Keyboard
   end
   private
   def self.send_key command, code
-    # POSIX::Spawn.send(:`, "xdotool key shift")
-    # puts "Received keystroke"
-    # POSIX::Spawn.send(:`, "xdotool #{command} --clearmodifiers #{code}")
     POSIX::Spawn.send(:`, "xte '#{command} #{@@keycodes[code]}'")
-    # POSIX::Spawn.send(:`, "xdotool key Caps_Lock")
   end
 end

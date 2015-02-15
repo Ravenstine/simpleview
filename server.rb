@@ -26,19 +26,22 @@ class Server
       @screen.stop if @screen
     end
     @socket.onmessage do |message|
-      message = JSON.parse(message)
-      case message["event"]
-      when "mousemove"
-        Mouse.move message["data"][0], message["data"][1]
-      when "mousedown"
-        Mouse.press message["data"]
-      when "mouseup"
-        Mouse.release message["data"]
-      when "keydown"
-        Keyboard.keydown message['data']
-      when "keyup"
-        Keyboard.keyup message['data']
-      end
+      message = JSON.parse(message)['data']
+
+      Object.const_get(message['device']).send(message['method'], *message['arguments'])
+
+      # case message["event"]
+      # when "mousemove"
+      #   Mouse.move message["data"][0], message["data"][1]
+      # when "mousedown"
+      #   Mouse.press message["data"]
+      # when "mouseup"
+      #   Mouse.release message["data"]
+      # when "keydown"
+      #   Keyboard.keydown message['data']
+      # when "keyup"
+      #   Keyboard.keyup message['data']
+      # end
     end
   rescue ConnectionError
     puts "Error connecting to websocket.  Retrying..."
