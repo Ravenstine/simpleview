@@ -4,6 +4,7 @@ require './linux/keyboard'
 require './linux/mouse'
 require './linux/screen'
 require 'json'
+require 'yaml'
 
 class Server
   def initialize
@@ -32,9 +33,6 @@ class Server
 
       responses[code].call || responses[:closed].call
       @screen.stop
-    rescue => e
-      puts "There was a problem:"
-      puts e
     end
     @socket.onmessage do |message|
       message = JSON.parse(message)['data']
@@ -45,6 +43,9 @@ class Server
     EM::Timer.new 3 do
       establish_connection
     end
+  rescue => e
+    puts "There was a problem:"
+    puts e
   end
 
   def cast_screen
