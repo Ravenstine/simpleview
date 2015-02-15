@@ -10,6 +10,7 @@ class SocketConnection
   end
   def disconnect
     @socket.close_connection
+    @socket = nil
   end
 end
 
@@ -36,24 +37,21 @@ class Server < SocketConnection
   end
 
   def socket= socket=nil
-    @socket = socket
-    if @socket
-      puts "Server Connected"
-      @socket.onmessage do |message|
-        @clients.each do |client|
-          client.push message
-        end
+    @socket ||= socket
+    puts "Server Connected"
+    @socket.onmessage do |message|
+      @clients.each do |client|
+        client.push message
       end
-    end  
+    end
+  rescue NoMethodError
+    puts "Server was given no socket."
+  ensure
     @socket  
   end
 
   def connected?
-    if @socket && (state = @socket.state)
-      state == :connected
-    else
-      false
-    end
+    @socket.state == :connected rescue false
   end
 end
 
@@ -68,23 +66,36 @@ EM.run do
 
   @node = Node.new
 
+  ## Server Socket
   EM::WebSocket.run host: "0.0.0.0", port: 9393 do |ws|
 
     ws.onopen do |handshake|
 
-      is_server = handshake.query.has_key?("server")
       channel_name = handshake.query["channel"]
-      server = @node.servers[channel_name] ||= Server.new(nil, @node, channel_name)
-
-      if is_server
-        server.socket = ws unless server.connected?
-      else
-        client = Client.new ws, server
-        server.clients << client
-      end
+      server = @node.servers[channel_name] ||= Server.new
+      server.socket = ws
 
       ws.onclose do
-        (client || server).disconnect
+        server.disconnect
+      end
+
+    end
+
+  end
+
+  ## Client Socket
+  EM::WebSocket.run host: "0.0.0.0", port: 9494 do |ws|
+
+    ws.onopen do |handshake|
+
+      channel_name = handshake.query["channel"]
+      server = @node.servers[channel_name] ||= Server.new
+
+      client = Client.new ws, server
+      server.clients << client
+
+      ws.onclose do
+        client.disconnect
       end
 
     end
@@ -102,7 +113,7 @@ EM.run do
     end
   end
 
-  EventMachine::start_server("0.0.0.0", 5353, WebServer)
+  EventMachine::start_server("0.0.0.0", 80, WebServer)
 
 end
 

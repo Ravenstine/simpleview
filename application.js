@@ -1,6 +1,6 @@
 (function(){
 
-  var stream = new WebSocket('ws://' + window.location.hostname + ':9393' + "?channel=gimpler")
+  var stream = new WebSocket('ws://' + window.location.hostname + ':9494' + window.location.search)
   var imageElement = document.querySelector("img")
 
   stream.onopen = function(){
@@ -44,19 +44,16 @@
 
   addPushers(["mouseup", "mousedown"], function(e, event){
     e.preventDefault()
-    // return {button: e.which, coords: [e.pageX,e.pageY]}
     return {constant: "Mouse", method: event, arguments: [e.pageX, e.pageY, e.which]}
   })
 
   addPushers(["mousemove"], function(e, event){
-    // return [e.pageX,e.pageY]
     e.preventDefault()
     return {constant: "Mouse", method: event, arguments: [e.pageX, e.pageY]}
   })
 
 
   addPushers(["keydown", "keyup"], function(e, event){
-    // return e.which
     return {constant: "Keyboard", method: event, arguments: [e.which]}
   })
 
