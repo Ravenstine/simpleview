@@ -42,14 +42,23 @@
     })
   }
 
-  addPushers(["mouseup", "mousedown", "mousemove"], function(e, event){
+  addPushers(["mouseup", "mousedown"], function(e, event){
+    e.preventDefault
+    return {button: e.which, coords: [e.pageX,e.pageY]}
+  })
+
+  addPushers(["mousemove"], function(e, event){
     return [e.pageX,e.pageY]
   })
 
+
   addPushers(["keydown", "keyup"], function(e, event){
-    var unicode
-    unicode = "0x" + e.keyIdentifier.split("+")[1];
-    return unicode
+    return e.which
   })
+
+  addEventListener("contextMenu", function(){
+    return false
+  })
+
 
 })()

@@ -9,4 +9,10 @@ module Mouse
   def self.left_press x, y
     @mouse.press x,y
   end
+  def self.press data
+    @mouse.press data['coords'][0], data['coords'][1], data['button']
+  end
+  def self.release data
+    @mouse.release data['coords'][0], data['coords'][1], data['button']
+  end
 end

@@ -3,6 +3,7 @@ Bundler.require :server
 require './linux/keyboard'
 require './linux/mouse'
 require './linux/screen'
+require 'json'
 
 class Server
   def initialize
@@ -30,9 +31,9 @@ class Server
       when "mousemove"
         Mouse.move message["data"][0], message["data"][1]
       when "mousedown"
-        Mouse.left_press message["data"][0], message["data"][1]
+        Mouse.press message["data"]
       when "mouseup"
-        Mouse.left_release message["data"][0], message["data"][1]
+        Mouse.release message["data"]
       when "keydown"
         Keyboard.keydown message['data']
       when "keyup"
