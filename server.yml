@@ -1,5 +1,6 @@
 node:
   url: 54.200.180.86:9393
+  # url: localhost:9393
 server:
   channel: gimpler
   frame_rate: 1

@@ -7,10 +7,13 @@ class SocketConnection
   end
   def push message
     @socket.send message
+  rescue
+    puts "Could not push to socket."
   end
   def disconnect
     @socket.close_connection
     @socket = nil
+  rescue
   end
 end
 
@@ -113,7 +116,7 @@ EM.run do
     end
   end
 
-  EventMachine::start_server("0.0.0.0", 80, WebServer)
+  EventMachine::start_server("0.0.0.0", 1337, WebServer)
 
 end
 
